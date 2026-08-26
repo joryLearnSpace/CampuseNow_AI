@@ -16,6 +16,16 @@ export default function Home() {
         alignItems: "center",
       }}>
         <div style={{ maxWidth: 760, width: "100%", textAlign: "center" }}>
+          <img
+            src="/logo.png"
+            alt="CampusNow AI"
+            style={{
+              display: "block",
+              width: "min(190px, 48vw)",
+              height: "auto",
+              margin: "0 auto 18px",
+            }}
+          />
           <h1 style={{
             fontSize: "clamp(32px, 5vw, 52px)",
             fontWeight: 800, color: "white",

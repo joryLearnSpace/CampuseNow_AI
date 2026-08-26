@@ -56,7 +56,7 @@ export default function Admin() {
       .finally(() => setLoading(false));
   }, []);
 
-  async function decide(reviewId: string, decision: "approved" | "rejected" | "revision_requested") {
+  async function decide(reviewId: string, decision: "approved" | "rejected" | "revision") {
     setDeciding(reviewId);
     try {
       await submitReviewDecision(reviewId, {
@@ -70,7 +70,7 @@ export default function Admin() {
       const labels: Record<string, string> = {
         approved: "تم اعتماد المساهمة بنجاح",
         rejected: "تم رفض المساهمة",
-        revision_requested: "تم طلب تعديل المساهمة",
+        revision: "تم طلب تعديل المساهمة",
       };
       addToast(labels[decision], "success");
     } catch {
@@ -195,7 +195,7 @@ export default function Admin() {
                     رفض
                   </button>
                   <button
-                    onClick={() => decide(rev.id, "revision_requested")}
+                    onClick={() => decide(rev.id, "revision")}
                     disabled={deciding === rev.id}
                     style={{
                       ...btnBase,

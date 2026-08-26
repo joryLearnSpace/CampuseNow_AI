@@ -27,7 +27,7 @@ export interface AskResponse {
   };
   verification: {
     answer: string;
-    confidence: number;
+    confidence_score: number;
     evidence_used: string[];
     warning?: string;
   };
@@ -67,7 +67,7 @@ export interface ReviewItem {
 
 export interface ReviewDecision {
   reviewer_id: string;
-  decision: "approved" | "rejected" | "revision_requested";
+  decision: "approved" | "rejected" | "revision";
   feedback: string;
 }
 

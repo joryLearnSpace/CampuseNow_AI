@@ -1,6 +1,10 @@
 import type { AskPayload, AskResponse, VolunteerProfile, ReviewItem, ReviewDecision } from "../types/campusNow";
 
-const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:8000/api";
+const API_BASE = import.meta.env.VITE_API_URL ?? (
+  window.location.hostname.endsWith(".app.github.dev")
+    ? `https://${window.location.hostname.replace(/-\d+\.app\.github\.dev$/, "-8000.app.github.dev")}/api`
+    : "http://localhost:8000/api"
+);
 
 async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {

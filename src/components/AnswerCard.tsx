@@ -65,13 +65,13 @@ export default function AnswerCard({ result, question, onReset }: Props) {
 
           {/* 3 Mini Cards */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 20 }}>
-            <MiniCard label="مستوى الثقة" value={`${verification.confidence}%`}
-              color={verification.confidence >= 80 ? "var(--success)" : "var(--warning)"} />
+            <MiniCard label="مستوى الثقة" value={`${verification.confidence_score}%`}
+              color={verification.confidence_score >= 80 ? "var(--success)" : "var(--warning)"} />
             <MiniCard label="المصادر" value={`${verification.evidence_used.length} مصادر`} icon={<Users size={14} />} />
             <MiniCard label="الموقع" value={routing.location_name} small />
           </div>
 
-          <ConfidenceBar value={verification.confidence} />
+          <ConfidenceBar value={verification.confidence_score} />
 
           {/* Accordion */}
           <div style={{ marginTop: 16 }}>
