@@ -6,7 +6,7 @@ import type {
   HumanReview,
 } from "../types/campusNow";
 
-const API_BASE = import.meta.env.VITE_CAMPUSNOW_API ?? "http://localhost:8000/api";
+const API_BASE = import.meta.env.VITE_CAMPUSNOW_API ?? "/api";
 
 async function apiFetch<T>(
   path: string,
@@ -23,23 +23,9 @@ async function apiFetch<T>(
   return res.json() as Promise<T>;
 }
 
-// Auth — stub, ready for Supabase Auth integration
-export async function signIn(email: string, password: string) {
-  // TODO: replace with Supabase Auth signInWithPassword
-  return apiFetch<{ token: string; userId: string }>("/auth/login", {
-    method: "POST",
-    body: JSON.stringify({ email, password }),
-  });
-}
-
-export async function signOut() {
-  // TODO: replace with Supabase Auth signOut
-  return apiFetch("/auth/logout", { method: "POST" });
-}
-
 // Check-ins
-export async function createCheckIn(locationId: string, userId: string) {
-  return apiFetch<CheckIn>("/checkins", {
+export async function createCheckIn(userId: string, locationId: string) {
+  return apiFetch<{ checkin_id: string; location_id: string; expires_at: string }>("/checkins", {
     method: "POST",
     body: JSON.stringify({ location_id: locationId, user_id: userId }),
   });
@@ -65,14 +51,32 @@ export async function createCampusRequest(payload: {
   requester_id: string;
   category?: string;
 }) {
-  return apiFetch<{ requestId: string; status: string; eligibleResponders: number; routingMessage: string }>("/requests", {
+  const result = await apiFetch<{ request_id: string; status: string; eligible_responder_count: number; message: string }>("/requests", {
     method: "POST",
-    body: JSON.stringify(payload),
+    body: JSON.stringify({
+      question: payload.question,
+      location_id: payload.location_id,
+      requester_id: payload.requester_id,
+    }),
   });
+  return {
+    requestId: result.request_id,
+    status: result.status,
+    eligibleResponders: result.eligible_responder_count,
+    routingMessage: result.message,
+  };
 }
 
 export async function getCampusRequest(requestId: string) {
-  return apiFetch<CampusRequest>(`/requests/${requestId}`);
+  const result = await apiFetch<CampusRequest & { location_id: string; requester_id: string; created_at: string; updated_at?: string }>(`/requests/${requestId}`);
+  return {
+    ...result,
+    locationId: result.locationId ?? result.location_id,
+    locationName: result.locationName ?? result.location_id,
+    requesterId: result.requesterId ?? result.requester_id,
+    createdAt: result.createdAt ?? result.created_at,
+    updatedAt: result.updatedAt ?? result.updated_at ?? result.created_at,
+  };
 }
 
 export async function getCampusFeed(filter?: string) {
@@ -85,17 +89,24 @@ export async function submitCommunityResponse(
   requestId: string,
   payload: { responder_id: string; answer: string; is_present_now: boolean }
 ) {
-  return apiFetch<{ success: boolean; presenceVerified: boolean }>(`/requests/${requestId}/responses`, {
+  const result = await apiFetch<{ presence_verified: boolean }>(`/requests/${requestId}/responses`, {
     method: "POST",
     body: JSON.stringify(payload),
   });
+  return { success: true, presenceVerified: result.presence_verified };
 }
 
 // Verification — triggers Agent 2 (Trust & Verification) + Agent 3 (Community & Volunteer)
 export async function verifyCampusRequest(requestId: string) {
-  return apiFetch<{ verifiedAnswer: string; confidence: number; supportingCount: number; status: string }>(`/requests/${requestId}/verify`, {
+  const result = await apiFetch<{ status: string; verification: { answer: string; confidence_score: number; evidence_used: string[] } }>(`/requests/${requestId}/verify`, {
     method: "POST",
   });
+  return {
+    verifiedAnswer: result.verification.answer,
+    confidence: result.verification.confidence_score,
+    supportingCount: result.verification.evidence_used.length,
+    status: result.status,
+  };
 }
 
 // Lost & Found

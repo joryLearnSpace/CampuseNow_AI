@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { Page, AgentStep } from "../types/campusNow";
-import LoadingState from "../components/LoadingState";
+import { createCampusRequest } from "../services/campusNowApi";
 
 interface AskProps {
   userId: string;
@@ -45,35 +45,12 @@ export default function Ask({ userId, navigate }: AskProps) {
     }
     setError("");
     setSubmitState("processing");
-    setAgentSteps([
-      { label: "Request understood", status: "loading" },
-      { label: "Relevant campus location identified", status: "pending" },
-      { label: "Waiting for community responses", status: "pending" },
-    ]);
+    setAgentSteps([{ label: "Campus Request & Routing Agent", status: "loading" }]);
 
     try {
-      // Simulate Agent 1 — Campus Request & Routing Agent processing
-      await new Promise((r) => setTimeout(r, 600));
-      setAgentSteps([
-        { label: "Request understood", status: "done" },
-        { label: "Relevant campus location identified", status: "loading" },
-        { label: "Waiting for community responses", status: "pending" },
-      ]);
-      await new Promise((r) => setTimeout(r, 500));
-      setAgentSteps([
-        { label: "Request understood", status: "done" },
-        { label: "Relevant campus location identified", status: "done" },
-        { label: "Waiting for community responses", status: "loading" },
-      ]);
-
-      // TODO: replace with real API call: createCampusRequest({ question, location_id: locationId, requester_id: userId, category })
-      await new Promise((r) => setTimeout(r, 800));
-      setAgentSteps([
-        { label: "Request understood", status: "done" },
-        { label: "Relevant campus location identified", status: "done" },
-        { label: "Waiting for community responses", status: "done" },
-      ]);
-      setResult({ requestId: `req-${Date.now()}`, eligibleResponders: 12, routingMessage: "Sent to students near this location." });
+      const routedRequest = await createCampusRequest({ question: question.trim(), location_id: locationId, requester_id: userId, category });
+      setAgentSteps([{ label: "Campus Request & Routing Agent", status: "done" }]);
+      setResult(routedRequest);
       setSubmitState("success");
     } catch {
       setSubmitState("error");

@@ -4,10 +4,9 @@ import type { User } from "../types/campusNow";
 interface ProfileProps {
   user: User;
   onUpdate: (user: User) => void;
-  onSignOut: () => void;
 }
 
-export default function Profile({ user, onUpdate, onSignOut }: ProfileProps) {
+export default function Profile({ user, onUpdate }: ProfileProps) {
   const [locationPrivacy, setLocationPrivacy] = useState(user.locationPrivacy);
 
   function togglePrivacy() {
@@ -90,12 +89,6 @@ export default function Profile({ user, onUpdate, onSignOut }: ProfileProps) {
         </div>
       </div>
 
-      <button
-        onClick={onSignOut}
-        className="w-full py-3 rounded-xl border border-red-200 text-red-600 text-sm font-semibold hover:bg-red-50 transition-colors"
-      >
-        Sign Out
-      </button>
     </div>
   );
 }

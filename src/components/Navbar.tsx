@@ -5,7 +5,6 @@ interface NavbarProps {
   currentPage: Page;
   navigate: (page: Page) => void;
   user: User | null;
-  onSignOut: () => void;
 }
 
 const navItems: { id: Page; label: string; icon: string }[] = [
@@ -17,7 +16,7 @@ const navItems: { id: Page; label: string; icon: string }[] = [
   { id: "profile", label: "Profile", icon: "👤" },
 ];
 
-export default function Navbar({ currentPage, navigate, user, onSignOut }: NavbarProps) {
+export default function Navbar({ currentPage, navigate, user }: NavbarProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
 
@@ -155,14 +154,6 @@ export default function Navbar({ currentPage, navigate, user, onSignOut }: Navba
                 <span>⚙️</span> Admin
               </button>
             )}
-            <div className="mt-auto">
-              <button
-                onClick={() => { onSignOut(); setMenuOpen(false); }}
-                className="w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50"
-              >
-                Sign Out
-              </button>
-            </div>
           </div>
         </div>
       )}

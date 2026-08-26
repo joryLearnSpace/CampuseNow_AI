@@ -87,7 +87,6 @@ export interface CheckIn {
 }
 
 export type Page =
-  | "login"
   | "home"
   | "campus"
   | "location-details"

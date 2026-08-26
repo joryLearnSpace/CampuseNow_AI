@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { User, Page } from "../types/campusNow";
 import CampusFeedCard from "../components/CampusFeedCard";
 import LoadingState from "../components/LoadingState";
+import { createCheckIn } from "../services/campusNowApi";
 
 interface HomeProps {
   user: User;
@@ -68,8 +69,7 @@ export default function Home({ user, navigate }: HomeProps) {
   async function handleCheckIn() {
     setCheckingIn(true);
     try {
-      // TODO: call createCheckIn(locationId, user.id) from API service
-      await new Promise((r) => setTimeout(r, 700));
+      await createCheckIn(user.id, "computing-building");
       setCheckInStatus("checked_in");
       setCheckInLocation("Computing Building");
     } finally {

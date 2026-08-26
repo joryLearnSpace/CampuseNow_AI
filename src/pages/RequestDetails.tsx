@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Page } from "../types/campusNow";
 import ConfidenceBadge from "../components/ConfidenceBadge";
-import LoadingState from "../components/LoadingState";
+import { getCampusRequest, submitCommunityResponse, verifyCampusRequest } from "../services/campusNowApi";
+import type { CampusRequest } from "../types/campusNow";
 
 interface RequestDetailsProps {
   requestId: string;
@@ -18,14 +19,15 @@ export default function RequestDetails({ requestId, userId, navigate }: RequestD
   const [submitting, setSubmitting] = useState(false);
   const [verifyState, setVerifyState] = useState<VerifyState>("idle");
   const [quickAnswer, setQuickAnswer] = useState("");
+  const [request, setRequest] = useState<CampusRequest | null>(null);
+  const [loadError, setLoadError] = useState("");
+  const [verification, setVerification] = useState<{ verifiedAnswer: string; confidence: number; supportingCount: number } | null>(null);
 
-  const mockRequest = {
-    locationName: "Central Library",
-    question: "Is the library crowded right now?",
-    status: "waiting",
-    responseCount: 3,
-    eligibleResponders: 12,
-  };
+  useEffect(() => {
+    getCampusRequest(requestId)
+      .then(setRequest)
+      .catch(() => setLoadError("We could not load this campus request."));
+  }, [requestId]);
 
   async function handleSubmitResponse(e: React.FormEvent) {
     e.preventDefault();
@@ -33,10 +35,10 @@ export default function RequestDetails({ requestId, userId, navigate }: RequestD
     if (!finalAnswer) return;
     setSubmitting(true);
     try {
-      // TODO: submitCommunityResponse(requestId, { responder_id: userId, answer: finalAnswer, is_present_now: true })
-      await new Promise((r) => setTimeout(r, 800));
+      const result = await submitCommunityResponse(requestId, { responder_id: userId, answer: finalAnswer, is_present_now: true });
       setSubmitted(true);
-      setPresenceVerified(true);
+      setPresenceVerified(result.presenceVerified);
+      setRequest((current) => current ? { ...current, responseCount: current.responseCount + 1 } : current);
     } finally {
       setSubmitting(false);
     }
@@ -45,9 +47,9 @@ export default function RequestDetails({ requestId, userId, navigate }: RequestD
   async function handleVerify() {
     setVerifyState("verifying");
     try {
-      // TODO: verifyCampusRequest(requestId) — triggers Agent 2 + Agent 3
-      await new Promise((r) => setTimeout(r, 2000));
-      setVerifyState("verified");
+      const result = await verifyCampusRequest(requestId);
+      setVerification(result);
+      setVerifyState(result.status === "verified" ? "verified" : "low_confidence");
     } catch {
       setVerifyState("low_confidence");
     }
@@ -65,17 +67,20 @@ export default function RequestDetails({ requestId, userId, navigate }: RequestD
         Back
       </button>
 
+      {loadError && <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-xl mb-5">{loadError}</div>}
+      {!request && !loadError && <div className="text-center py-12 text-slate-500 text-sm">Loading campus request...</div>}
+      {request && <>
       {/* Question */}
       <div className="bg-white rounded-2xl border border-slate-200 p-5 mb-5">
         <div className="flex items-center gap-2 text-sm text-slate-500 mb-2">
           <span>📍</span>
-          <span>{mockRequest.locationName}</span>
+          <span>{request.locationName}</span>
         </div>
         <h2 className="text-lg font-bold text-slate-800 mb-3" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-          {mockRequest.question}
+          {request.question}
         </h2>
         <div className="flex items-center gap-3 text-sm text-slate-500 flex-wrap">
-          <span>{mockRequest.responseCount} responses so far</span>
+          <span>{request.responseCount} responses so far</span>
           <span>·</span>
           <span className="flex items-center gap-1.5 text-amber-600">
             <span className="animate-pulse">⏳</span>
@@ -88,7 +93,7 @@ export default function RequestDetails({ requestId, userId, navigate }: RequestD
       {!submitted ? (
         <div className="bg-blue-50 border border-blue-200 rounded-2xl p-5 mb-5">
           <p className="text-sm font-semibold text-blue-800 mb-1">Someone needs help nearby</p>
-          <p className="text-xs text-blue-600 mb-4">You are checked in at {mockRequest.locationName}. Your presence will be verified by the backend.</p>
+          <p className="text-xs text-blue-600 mb-4">You are checked in at {request.locationName}. Your presence will be verified by the backend.</p>
 
           {/* Quick response buttons */}
           <div className="flex flex-wrap gap-2 mb-4">
@@ -189,20 +194,20 @@ export default function RequestDetails({ requestId, userId, navigate }: RequestD
           </div>
           <div className="flex items-center gap-2 text-sm text-slate-500 mb-2">
             <span>📍</span>
-            <span>{mockRequest.locationName}</span>
+            <span>{request.locationName}</span>
           </div>
           <p className="font-semibold text-slate-800 mb-4 leading-relaxed">
-            The library appears moderately crowded, but several seats are available upstairs.
+            {verification?.verifiedAnswer}
           </p>
           <div className="flex flex-col gap-2 mb-4">
             <div className="flex items-center justify-between text-sm">
               <span className="text-slate-500">Confidence</span>
             </div>
-            <ConfidenceBadge confidence={84} />
+            <ConfidenceBadge confidence={verification?.confidence ?? 0} />
           </div>
           <div className="flex items-center justify-between text-sm">
             <span className="text-slate-500">Supporting responses</span>
-            <span className="font-semibold text-slate-700">6 students</span>
+            <span className="font-semibold text-slate-700">{verification?.supportingCount ?? 0} students</span>
           </div>
           <div className="flex items-center justify-between text-sm mt-1">
             <span className="text-slate-500">Last updated</span>
@@ -227,6 +232,7 @@ export default function RequestDetails({ requestId, userId, navigate }: RequestD
           </button>
         </div>
       )}
+      </>}
     </div>
   );
 }
