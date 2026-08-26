@@ -1,0 +1,10 @@
+{
+  "description": "This responsive web app enables users to effortlessly create and manage dynamic websites that adapt seamlessly to any device, enhancing user engagement.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
