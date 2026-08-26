@@ -1,112 +1,155 @@
-import type { User } from "../types/campusNow";
+import { useEffect, useState } from "react";
+import { getVolunteerProfile } from "../services/campusNowApi";
+import type { VolunteerProfile } from "../types/campusNow";
+import { CURRENT_USER_ID } from "../types/campusNow";
+import { AlertCircle, Award, CheckCircle, Clock } from "lucide-react";
 
-interface VolunteerProps {
-  user: User;
-}
+const FALLBACK: VolunteerProfile = {
+  user_id: CURRENT_USER_ID,
+  name: "طالب تجريبي",
+  points: 287,
+  trust_score: 92,
+  verified_contributions: 18,
+  volunteer_hours: 2.5,
+  volunteer_status: "pending",
+  recent_contributions: [
+    { id: "c1", location: "مبنى 11 - فرع الفيصلية", description: "أفاد بازدحام متوسط في الدور الثاني", points: 16, timestamp: "منذ 15 دقيقة" },
+    { id: "c2", location: "مكتبة الأميرة الجوهرة", description: "أكد إتاحة مقاعد في الحي الثاني", points: 14, timestamp: "منذ يوم" },
+    { id: "c3", location: "مبنى 17", description: "كافيتيريا مفتوحة", points: 5, timestamp: "منذ يومين" },
+  ],
+};
 
-const ACTIVITY_FEED = [
-  { action: "Verified library status", points: 5, date: "Today, 11:20 AM" },
-  { action: "Responded to help request", points: 10, date: "Today, 9:45 AM" },
-  { action: "Found and reported lost item", points: 15, date: "Yesterday" },
-  { action: "Confirmed cafeteria status", points: 5, date: "Yesterday" },
-  { action: "Helped student navigate campus", points: 10, date: "2 days ago" },
-];
+export default function Volunteer() {
+  const [profile, setProfile] = useState<VolunteerProfile | null>(null);
+  const [loading, setLoading] = useState(true);
 
-export default function Volunteer({ user }: VolunteerProps) {
-  const levelColors: Record<string, string> = {
-    "New Helper": "bg-slate-100 text-slate-600",
-    "Active Helper": "bg-blue-50 text-blue-700",
-    "Trusted Helper": "bg-green-50 text-green-700",
-    "Campus Champion": "bg-amber-50 text-amber-700",
-  };
+  useEffect(() => {
+    getVolunteerProfile(CURRENT_USER_ID)
+      .then(setProfile)
+      .catch(() => setProfile(FALLBACK))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const data = profile ?? FALLBACK;
+
+  const statCard = (label: string, value: string | number, icon: React.ReactNode, color: string) => (
+    <div className="card" style={{ padding: 24, display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ width: 40, height: 40, borderRadius: 10, background: "#EDF6FB", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        {icon}
+      </div>
+      <div>
+        <p style={{ fontSize: 28, fontWeight: 800, color }}>{value}</p>
+        <p style={{ fontSize: 13, color: "var(--text-secondary)", fontWeight: 500 }}>{label}</p>
+      </div>
+    </div>
+  );
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6 pb-24 md:pb-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-800 mb-1" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-          Campus Helpers
-        </h1>
-        <p className="text-slate-500 text-sm">Help your university community and build your contribution record.</p>
+    <div style={{ maxWidth: 900, margin: "0 auto", padding: "40px 24px 64px" }}>
+      {/* Header */}
+      <div style={{ marginBottom: 36 }}>
+        <h1 style={{ fontSize: 28, fontWeight: 800, color: "var(--primary-dark)", marginBottom: 6 }}>مساهماتي</h1>
+        <p style={{ fontSize: 15, color: "var(--text-secondary)" }}>تابع مساهماتك في مساعدة مجتمع الجامعة.</p>
       </div>
 
-      {/* Profile stats */}
-      <div className="bg-[#1e3a5f] text-white rounded-2xl p-6 mb-5">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-12 h-12 rounded-full bg-blue-400 flex items-center justify-center text-lg font-bold">
-            {user.name.charAt(0)}
-          </div>
-          <div>
-            <p className="font-bold text-base">{user.name}</p>
-            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-              user.helperLevel === "Trusted Helper" ? "bg-green-400/20 text-green-200" : "bg-white/20 text-white/80"
-            }`}>
-              {user.helperLevel}
-            </span>
-          </div>
+      {/* Student ID badge */}
+      <div className="card" style={{ padding: "16px 20px", marginBottom: 24, display: "flex", alignItems: "center", gap: 14 }}>
+        <div style={{
+          width: 48, height: 48, borderRadius: "50%",
+          background: "linear-gradient(135deg, #004F6E, #83CCEA)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+          <span style={{ color: "white", fontWeight: 800, fontSize: 18 }}>ط</span>
         </div>
-        <div className="grid grid-cols-3 gap-4">
-          {[
-            { label: "Community Points", value: user.communityPoints },
-            { label: "Verified Contributions", value: user.verifiedContributions },
-            { label: "Helpful Responses", value: user.helpfulResponses },
-          ].map((s) => (
-            <div key={s.label} className="text-center">
-              <p className="text-2xl font-bold">{s.value}</p>
-              <p className="text-white/60 text-xs mt-0.5 leading-tight">{s.label}</p>
+        <div>
+          <p style={{ fontWeight: 800, fontSize: 16, color: "var(--text-primary)" }}>{data.name}</p>
+          <p style={{ fontSize: 13, color: "var(--text-secondary)" }}>{data.user_id}</p>
+        </div>
+        <div style={{ marginRight: "auto" }}>
+          <span style={{
+            background: "#F0FDF4", color: "#22A06B",
+            padding: "5px 14px", borderRadius: 20,
+            fontSize: 12, fontWeight: 700,
+            border: "1px solid #BBF7D0",
+          }}>
+            ✓ عضو نشيط
+          </span>
+        </div>
+      </div>
+
+      {/* Stats */}
+      {loading ? (
+        <div style={{ textAlign: "center", padding: 40, color: "var(--text-secondary)" }}>جاري التحميل...</div>
+      ) : (
+        <>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14, marginBottom: 24 }}>
+            {statCard("نقاط المجتمع", data.points, <Award size={20} style={{ color: "var(--primary-dark)" }} />, "var(--primary-dark)")}
+            {statCard("مستوى الثقة", `${data.trust_score}%`, <CheckCircle size={20} style={{ color: "var(--success)" }} />, "var(--success)")}
+            {statCard("المساهمات الموثقة", data.verified_contributions, <Award size={20} style={{ color: "#D99A25" }} />, "#D99A25")}
+          </div>
+
+          {/* Volunteer hours card */}
+          <div className="card" style={{ padding: 24, marginBottom: 20 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <Clock size={20} style={{ color: "var(--primary-dark)" }} />
+                <p style={{ fontWeight: 700, fontSize: 16, color: "var(--text-primary)" }}>الساعات التطوعية</p>
+              </div>
+              <span style={{
+                background: "#FFFBEB", color: "#D99A25",
+                padding: "5px 14px", borderRadius: 20,
+                fontSize: 12, fontWeight: 700,
+                border: "1px solid #FDE68A",
+                display: "flex", alignItems: "center", gap: 6,
+              }}>
+                <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#D99A25", display: "inline-block" }} />
+                قيد المراجعة
+              </span>
             </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Volunteer activity — clearly distinguished from official hours */}
-      <div className="grid sm:grid-cols-2 gap-4 mb-6">
-        <div className="bg-white rounded-2xl border border-slate-200 p-5">
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Community Points</p>
-          <p className="text-3xl font-bold text-[#1e3a5f] mb-1">{user.communityPoints}</p>
-          <p className="text-xs text-slate-400">Awarded automatically for verified contributions.</p>
-          <div className="mt-3 text-xs text-slate-600 font-medium text-green-600">✓ Credited instantly</div>
-        </div>
-        <div className="bg-white rounded-2xl border border-amber-200 p-5">
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Official Volunteer Hours</p>
-          <p className="text-3xl font-bold text-amber-600 mb-1">2h 20m</p>
-          <p className="text-xs text-slate-400">Eligible activity — pending human review.</p>
-          <div className="mt-3 flex items-center gap-1.5 text-xs text-amber-600 font-medium">
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-            Pending University Review
+            <p style={{ fontSize: 32, fontWeight: 800, color: "var(--primary-dark)", marginBottom: 4 }}>
+              {data.volunteer_hours ?? 0} ساعة
+            </p>
+            <p style={{ fontSize: 13, color: "var(--text-secondary)" }}>ساعات مؤهلة تحت المراجعة البشرية</p>
           </div>
-          <p className="text-xs text-slate-400 mt-1">
-            Official hours are NEVER automatically approved. An administrator reviews and approves all volunteer records.
-          </p>
-        </div>
-      </div>
 
-      {/* Progress bar to next level */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-5 mb-6">
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-sm font-semibold text-slate-700">Progress to Campus Champion</p>
-          <span className="text-xs text-slate-500">240 / 500 pts</span>
-        </div>
-        <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-          <div className="h-full bg-gradient-to-r from-blue-500 to-green-400 rounded-full" style={{ width: "48%" }} />
-        </div>
-        <p className="text-xs text-slate-400 mt-2">260 more points to reach Campus Champion</p>
-      </div>
-
-      {/* Activity feed */}
-      <h2 className="text-base font-bold text-slate-800 mb-3" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-        Recent Activity
-      </h2>
-      <div className="flex flex-col gap-2">
-        {ACTIVITY_FEED.map((a, i) => (
-          <div key={i} className="bg-white rounded-xl border border-slate-200 px-4 py-3 flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-slate-800">{a.action}</p>
-              <p className="text-xs text-slate-400 mt-0.5">{a.date}</p>
-            </div>
-            <span className="text-sm font-bold text-green-600">+{a.points}</span>
+          {/* Notice */}
+          <div style={{
+            padding: "14px 18px", borderRadius: 12,
+            background: "#EDF6FB", border: "1px solid var(--primary-light)",
+            display: "flex", alignItems: "flex-start", gap: 12,
+            marginBottom: 28,
+          }}>
+            <AlertCircle size={18} style={{ color: "var(--primary-dark)", flexShrink: 0, marginTop: 2 }} />
+            <p style={{ fontSize: 13, color: "var(--primary-dark)", lineHeight: 1.8, fontWeight: 500 }}>
+              <strong>ملاحظة مهمة:</strong> الساعات التطوعية الرسمية لا يعتمدها الذكاء الاصطناعي تلقائيًا، وإنما تحتاج مراجعة مسؤول بشري قبل الاعتماد الرسمي.
+            </p>
           </div>
-        ))}
-      </div>
+
+          {/* Recent contributions */}
+          <h2 style={{ fontSize: 18, fontWeight: 800, color: "var(--text-primary)", marginBottom: 14 }}>
+            أحدث المساهمات
+          </h2>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {data.recent_contributions.map((c) => (
+              <div key={c.id} className="card" style={{ padding: "14px 18px", display: "flex", alignItems: "center", gap: 14 }}>
+                <div style={{
+                  width: 38, height: 38, borderRadius: "50%",
+                  background: "#EDF6FB",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  flexShrink: 0,
+                }}>
+                  <span style={{ fontSize: 14, fontWeight: 800, color: "var(--primary-dark)" }}>+{c.points}</span>
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontWeight: 600, fontSize: 14, color: "var(--text-primary)" }}>{c.description}</p>
+                  <p style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 2 }}>{c.location}</p>
+                </div>
+                <span style={{ fontSize: 12, color: "var(--text-secondary)", flexShrink: 0 }}>{c.timestamp}</span>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }
